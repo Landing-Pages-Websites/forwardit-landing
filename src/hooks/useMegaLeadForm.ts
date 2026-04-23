@@ -12,7 +12,7 @@ import { useCallback, useEffect, useRef } from "react";
 
 const DEFAULTS = {
   CUSTOMER_ID: "3d3fed28-24fd-4b94-8b71-b183821511a8", // The ForwardIT
-  SITE_ID: "__SITE_ID__", // replaced post-registration
+  SITE_ID: "829c7db4-563f-44b0-9ef8-a0a921bdf8ce",
   ENDPOINT: "https://analytics.gomega.ai/submission/submit",
 };
 

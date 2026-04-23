@@ -40,16 +40,16 @@ export default function RootLayout({
     >
       <head>
         {/* MegaTag — matches working repower-landing + triarc setup (siteId + endpoints + meta tag required for form_submit events) */}
-        <meta name="mega-site-id" content="__SITE_ID__" />
+        <meta name="mega-site-id" content="829c7db4-563f-44b0-9ef8-a0a921bdf8ce" />
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.MEGA_TAG_CONFIG={siteKey:"__SITE_KEY__",siteId:"__SITE_ID__",gtmId:"__GTM_ID__",pixelId:"__META_PIXEL_ID__"};window.API_ENDPOINT="https://optimizer.gomega.ai";window.TRACKING_API_ENDPOINT="https://events-api.gomega.ai";`,
+            __html: `window.MEGA_TAG_CONFIG={siteKey:"sk_mobm6xnk_9tv3mn0rxin",siteId:"829c7db4-563f-44b0-9ef8-a0a921bdf8ce",gtmId:"GTM-MW6FBPG7",pixelId:"__META_PIXEL_ID__"};window.API_ENDPOINT="https://optimizer.gomega.ai";window.TRACKING_API_ENDPOINT="https://events-api.gomega.ai";`,
           }}
         />
         <script
           id="optimizer-script"
           src="https://cdn.gomega.ai/scripts/optimizer.min.js"
-          data-site-id="__SITE_ID__"
+          data-site-id="829c7db4-563f-44b0-9ef8-a0a921bdf8ce"
           async
         />
       </head>
