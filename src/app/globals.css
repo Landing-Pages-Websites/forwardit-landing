@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+/* ForwardIT — Brand tokens (scraped from theforwardit.com via DOM inspection)
+ * Theme: LIGHT body w/ navy hero + dark sections (mixed, matches live site)
+ * Primary: #1e4ec4 (button blue — exact match from live buttons)
+ * Secondary: #1d1a4e (deep navy — card text, dark section backgrounds)
+ * Accent: #cc3366 (rose/pink — link highlights)
+ * Display + body font: Poppins (matches live site h1 + body)
+ */
+@theme {
+  /* Brand colors */
+  --color-primary: #1e4ec4;
+  --color-primary-hover: #1740a3;
+  --color-primary-50: #eef3fd;
+  --color-primary-100: #dce7fb;
+  --color-primary-200: #b5cbf7;
+  --color-primary-700: #123478;
+
+  --color-accent: #1d1a4e; /* deep navy */
+  --color-accent-hover: #151240;
+  --color-accent-800: #0f0c33;
+
+  --color-rose: #cc3366; /* accent highlight */
+  --color-rose-hover: #a82753;
+
+  /* Surface */
+  --color-surface: #ffffff;
+  --color-surface-alt: #f6f7fb; /* soft cool neutral */
+  --color-surface-dark: #1d1a4e; /* hero / dark sections */
+  --color-ink: #1a1a1a;
+  --color-ink-muted: #5b6170;
+  --color-ink-on-dark: rgba(255, 255, 255, 0.86);
+  --color-line: #e5e7ef;
+
+  /* Fonts (variable set by next/font in layout.tsx) */
+  --font-display: var(--font-poppins);
+  --font-body: var(--font-poppins);
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  letter-spacing: -0.015em;
+  font-weight: 700;
+}
+
+/* Smooth scroll + scroll-padding so the fixed header doesn't hide anchor targets */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+/* Utility: eyebrow label */
+.eyebrow {
+  font-family: var(--font-poppins), sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  color: var(--color-primary);
+}
+
+.eyebrow-on-dark {
+  color: #8db4ff;
+}
+
+/* Subtle grid texture for dark sections */
+.bg-grid-navy {
+  background-color: var(--color-surface-dark);
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
