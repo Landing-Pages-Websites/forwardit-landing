@@ -53,9 +53,7 @@ export function ServicesSection() {
                 }`}
               >
                 <Reveal className="space-y-5">
-                  <p className="eyebrow">
-                    Service {idx + 1} · {service.label}
-                  </p>
+                  <p className="eyebrow">{service.label}</p>
                   <h3
                     id={`${service.anchorId}-heading`}
                     className="text-3xl sm:text-4xl font-bold text-[var(--color-accent)] leading-tight tracking-tight"
