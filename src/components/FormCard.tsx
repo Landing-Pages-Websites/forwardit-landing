@@ -138,6 +138,32 @@ export function FormCard({
         qualified: isQualified ? "yes" : "no",
         disqualification_reason: dqReason ?? "",
       });
+      // Manual form_submit event fire — required because our submit handler
+      // uses requestSubmit() pattern that bypasses the optimizer's native
+      // submit auto-detect (AGENTS.md Hard Rule #5). Fields are passed as
+      // separate keys so they land as separate columns in Mega Events /
+      // Keystone (Peter mandate 2026-05-14).
+      if (typeof window !== "undefined" && window.MegaTag?.trackEvent) {
+        try {
+          window.MegaTag.trackEvent("form_submit", {
+            element: `form-${idSuffix}`,
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            email: email.trim(),
+            phone: phoneDigits,
+            budget: b,
+            yearsInBusiness,
+            annualRevenue,
+            decisionMakers: decisionMakers.trim(),
+            timeline: t,
+            qualified: isQualified ? "yes" : "no",
+            disqualification_reason: dqReason ?? "",
+          });
+        } catch (trackErr) {
+          // Tracking is best-effort — never block the user on it.
+          console.warn("MegaTag.trackEvent failed:", trackErr);
+        }
+      }
     } catch (err) {
       console.error("Form submission failed:", err);
       // Per builder Hard Rule #12: still transition to success; don't strand user.

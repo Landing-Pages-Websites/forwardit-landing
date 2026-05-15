@@ -14,6 +14,21 @@ declare global {
     MEGA_TAG_CONFIG?: TrackingConfig;
     API_ENDPOINT?: string;
     TRACKING_API_ENDPOINT?: string;
+    /**
+     * Mega optimizer global. The optimizer normally auto-detects native form
+     * submits and fires `form_submit` itself, but our forms use the
+     * validate-first + requestSubmit + type="button" pattern (AGENTS.md Hard
+     * Rule #5) — which intentionally bypasses the native submit event to
+     * prevent duplicate-firing. That means callers MUST manually invoke
+     * `window.MegaTag?.trackEvent("form_submit", {...})` on a successful
+     * submission so the event still lands in Mega Events / GTM / Pixel.
+     */
+    MegaTag?: {
+      trackEvent?: (
+        eventName: string,
+        payload?: Record<string, unknown>,
+      ) => void;
+    };
   }
 }
 

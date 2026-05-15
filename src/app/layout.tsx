@@ -12,9 +12,10 @@ const poppins = Poppins({
 
 // Tracking IDs sourced from production HTML 2026-05-14.
 // Preserved byte-identical per AGENTS.md edits-lane Hard Rule #1-3.
+// GTM keeps the "GTM-" prefix — Google's gtm.js loader requires it.
 const SITE_ID = "829c7db4-563f-44b0-9ef8-a0a921bdf8ce";
 const SITE_KEY = "sk_mobm6xnk_9tv3mn0rxin";
-const GTM_ID = "MW6FBPG7";
+const GTM_ID = "GTM-MW6FBPG7";
 const META_PIXEL_ID = "2080354699192537";
 
 export const metadata: Metadata = {

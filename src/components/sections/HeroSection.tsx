@@ -7,13 +7,14 @@ import { WaveDivider } from "@/components/WaveDivider";
 import { BRAND, HERO_ROTATING_WORDS } from "@/lib/content";
 
 /**
- * Hero — full redesign per director directive 2026-05-14:
- *   - Animated rotating words ("admin work / data entry / follow-ups…")
- *   - Aurora gradient + drifting grid + floating particles for depth
- *   - "Live" indicator above headline (pulse dot)
- *   - Animated SVG wave divider at the bottom
- *   - Form-right split layout preserved
- *   - Brand colors enforced consistently (navy / electric blue / cyan accents)
+ * Hero — full redesign per director directive 2026-05-14 + QA rework 2026-05-15:
+ *   - Real video background of people working (Mixkit, royalty-free) with
+ *     poster fallback + reduced-motion fallback to motion layer.
+ *   - Animated rotating words under "Free your team from"
+ *   - Aurora gradient + drifting grid + floating particles layered over the
+ *     video (or as fallback) so the hero still feels dynamic if video is
+ *     blocked / reduced-motion is on.
+ *   - "Live" pulse pill, animated SVG wave divider, form-right split.
  */
 export function HeroSection() {
   return (
@@ -21,12 +22,44 @@ export function HeroSection() {
       id="hero"
       className="relative overflow-hidden pt-24 pb-24 sm:pt-28 lg:pt-32 lg:pb-32 min-h-[calc(100vh-0.5rem)] flex items-center bg-grid-animated"
     >
-      {/* Aurora glow (animated radial gradients) */}
-      <div className="aurora pointer-events-none" aria-hidden />
+      {/* Video background — autoplay/muted/loop/playsInline. Hidden when
+          prefers-reduced-motion is set (CSS in globals.css). */}
+      <video
+        className="hero-video pointer-events-none absolute inset-0 w-full h-full object-cover z-0"
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+        poster="/videos/hero-people-working-poster.jpg"
+        aria-hidden="true"
+      >
+        <source
+          src="/videos/hero-people-working.webm"
+          type="video/webm"
+          media="(min-width: 768px)"
+        />
+        <source
+          src="/videos/hero-people-working.mp4"
+          type="video/mp4"
+          media="(min-width: 768px)"
+        />
+        <source
+          src="/videos/hero-people-working-mobile.mp4"
+          type="video/mp4"
+        />
+      </video>
+      {/* Dark scrim — keeps headline contrast over the video */}
+      <div
+        className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-br from-[var(--color-accent-900)]/85 via-[var(--color-accent)]/75 to-[var(--color-primary-800)]/80"
+        aria-hidden
+      />
+      {/* Aurora glow (animated radial gradients) — sits over the video */}
+      <div className="aurora pointer-events-none z-[2]" aria-hidden />
       {/* Floating particle dots */}
-      <div className="particles" aria-hidden />
+      <div className="particles z-[2]" aria-hidden />
       {/* Top-fade vignette so the header pill stays readable */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[var(--color-accent-900)]/60 to-transparent z-[1]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[var(--color-accent-900)]/70 to-transparent z-[3]" />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 w-full grid lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-14 items-center z-10">
         <Reveal className="space-y-6 lg:max-w-2xl text-white">

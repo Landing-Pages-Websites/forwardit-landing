@@ -224,6 +224,9 @@ html {
   .bg-grid-animated { animation: none; }
   .aurora { animation: none; }
   .particles { animation: none; }
+  /* Hide hero video for users who request reduced motion — the poster
+     gradient + dark scrim still ship, hero stays readable. */
+  .hero-video { display: none !important; }
 }
 
 /* ============================================================
