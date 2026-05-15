@@ -176,55 +176,45 @@ html {
 }
 
 /* ============================================================
-   Animated rotating word (hero headline)
+   Animated rotating word (hero headline) — typewriter style
 ============================================================ */
 .rotating-words {
   display: inline-block;
   position: relative;
-  overflow: hidden;
   vertical-align: bottom;
   min-width: 8ch;
-  /* Clip to a single row so only one word is visible at a time —
-     the track translates 1.1em per step to cycle through. */
+  /* One-line clip so the row never grows mid-type. */
   height: 1.1em;
   line-height: 1.1;
+  white-space: nowrap;
 }
 
-.rotating-words-track {
-  display: inline-flex;
-  flex-direction: column;
-  animation: rotate-words 12s steps(6) infinite;
-}
-
-.rotating-words-item {
-  display: block;
-  height: 1.1em;
-  line-height: 1.1;
+.rotating-words-text {
   background: linear-gradient(90deg, #ffffff 0%, var(--color-primary-300) 50%, var(--color-cyan) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  white-space: nowrap;
+  white-space: pre;
 }
 
-@keyframes rotate-words {
-  0%   { transform: translateY(0); }
-  16%  { transform: translateY(0); }
-  17%  { transform: translateY(-1.1em); }
-  33%  { transform: translateY(-1.1em); }
-  34%  { transform: translateY(-2.2em); }
-  50%  { transform: translateY(-2.2em); }
-  51%  { transform: translateY(-3.3em); }
-  67%  { transform: translateY(-3.3em); }
-  68%  { transform: translateY(-4.4em); }
-  84%  { transform: translateY(-4.4em); }
-  85%  { transform: translateY(-5.5em); }
-  100% { transform: translateY(-5.5em); }
+.rotating-words-caret {
+  display: inline-block;
+  width: 1px;
+  margin-left: 2px;
+  color: var(--color-cyan, #67e8f9);
+  transform: translateY(-1px);
+  animation: caret-blink 1.05s steps(2, start) infinite;
+  font-weight: 400;
+}
+
+@keyframes caret-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rotating-words-track { animation: none; }
+  .rotating-words-caret { animation: none; opacity: 0; }
   .bg-grid-animated { animation: none; }
   .aurora { animation: none; }
   .particles { animation: none; }
