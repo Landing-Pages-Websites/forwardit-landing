@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMegaLeadForm } from "@/hooks/useMegaLeadForm";
 import {
-  ROI_OPTIONS,
+  BUDGET_OPTIONS,
+  YEARS_IN_BUSINESS_OPTIONS,
+  ANNUAL_REVENUE_OPTIONS,
   TIMELINE_OPTIONS,
   qualifies,
+  disqualificationReason,
+  type BudgetValue,
   type TimelineValue,
   BRAND,
 } from "@/lib/content";
@@ -18,22 +22,27 @@ type Props = {
 };
 
 /**
- * Shared lead form — fields come EXACTLY from the Atlas task spec
- * (5705b7e5-517e-46d2-8f21-c944e1c71778). Do NOT add/remove/reorder
- * fields without re-reading the task first.
+ * Shared lead form — fields updated per client Google Doc 2026-05-14
+ * (task 2cfce493-3d93-4dce-95f1-efc8f0698176).
  *
- * Fields (EXACT):
- *   1. First Name       name="firstName"   required
- *   2. Last Name        name="lastName"    required
- *   3. Email            name="email"       required
- *   4. Phone            name="phone"       required  (10-digit US, contact only — NOT used for CTAs)
- *   5. ROI value        name="roiValue"    required (all options qualify)
- *   6. Timeline         name="timeline"    required (6+ months disqualifies)
+ * Fields (EXACT, in submit order):
+ *   1. firstName              required
+ *   2. lastName               required
+ *   3. email                  required
+ *   4. phone                  required (10-digit US)
+ *   5. budget                 required (qualifier: < $2,500 = disqualified)
+ *   6. yearsInBusiness        required
+ *   7. annualRevenue          required
+ *   8. decisionMakers         required (free text — name + title)
+ *   9. timeline               required (qualifier: 6+ months = disqualified)
  *
  * Qualifier logic:
- *   - timeline ∈ {asap, 1-3, 3-6 months}  → success + redirect to BRAND.calendlyUrl after 2s
- *   - timeline = 6+ months                → success w/ "we'll reach out as timeline gets closer"
- *   - lead submits in BOTH cases (CRM opt-in is true per task spec)
+ *   - qualified  = budget ≥ $2,500 AND timeline < 6 months → redirect to Calendly
+ *   - otherwise  = success + "we'll reach out" message
+ *   - BOTH paths submit to the lead API (AGENTS.md Hard Rule #1)
+ *
+ * Anti-disruption pattern (button type="button" + validate-first + requestSubmit)
+ * prevents Mega optimizer from firing duplicate form_submit on native submit.
  */
 
 function formatPhone(value: string): string {
@@ -61,17 +70,21 @@ const ChevronDown = () => (
 
 export function FormCard({
   variant = "card",
-  heading = "Book your free ROI assessment",
+  heading = "Book your free strategy call",
   subheading = "30 minutes. No obligation. You'll leave with a rough hours-saved estimate for your business.",
   idSuffix = "main",
 }: Props) {
   const { submit } = useMegaLeadForm();
+  const formRef = useRef<HTMLFormElement>(null);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [roiValue, setRoiValue] = useState("");
+  const [budget, setBudget] = useState<BudgetValue | "">("");
+  const [yearsInBusiness, setYearsInBusiness] = useState("");
+  const [annualRevenue, setAnnualRevenue] = useState("");
+  const [decisionMakers, setDecisionMakers] = useState("");
   const [timeline, setTimeline] = useState<TimelineValue | "">("");
 
   const [submitting, setSubmitting] = useState(false);
@@ -86,7 +99,10 @@ export function FormCard({
     lastName.trim().length >= 1 &&
     /@.+\./.test(email) &&
     phoneValid &&
-    roiValue.length > 0 &&
+    budget.length > 0 &&
+    yearsInBusiness.length > 0 &&
+    annualRevenue.length > 0 &&
+    decisionMakers.trim().length >= 2 &&
     timeline.length > 0;
 
   // Auto-redirect to Calendly when qualified
@@ -99,22 +115,28 @@ export function FormCard({
     }
   }, [submitted, qualified]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function performSubmit() {
     if (submitting || submitted) return;
     if (!canSubmit) return;
     setError(null);
     setSubmitting(true);
-    const isQualified = qualifies(timeline as TimelineValue);
+    const b = budget as BudgetValue;
+    const t = timeline as TimelineValue;
+    const isQualified = qualifies(b, t);
+    const dqReason = disqualificationReason(b, t);
     try {
       await submit({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: email.trim(),
         phone: phoneDigits,
-        roiValue,
-        timeline,
+        budget: b,
+        yearsInBusiness,
+        annualRevenue,
+        decisionMakers: decisionMakers.trim(),
+        timeline: t,
         qualified: isQualified ? "yes" : "no",
+        disqualification_reason: dqReason ?? "",
       });
     } catch (err) {
       console.error("Form submission failed:", err);
@@ -127,9 +149,26 @@ export function FormCard({
     }
   }
 
+  function handleFormSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    performSubmit();
+  }
+
+  // Validate-first → requestSubmit pattern: button is type="button".
+  // This prevents the Mega optimizer from firing form_submit on a
+  // native submit event when validation would have blocked it.
+  function handleButtonClick() {
+    if (!canSubmit) {
+      // Show native validation messages
+      formRef.current?.reportValidity();
+      return;
+    }
+    formRef.current?.requestSubmit();
+  }
+
   const wrapperClass =
     variant === "hero"
-      ? "bg-white/97 backdrop-blur rounded-2xl shadow-2xl shadow-[var(--color-accent)]/40 border border-white/40 p-6 sm:p-8"
+      ? "bg-white/97 backdrop-blur rounded-2xl shadow-2xl shadow-[var(--color-accent)]/40 border border-white/40 p-6 sm:p-7"
       : variant === "inline"
       ? "bg-[var(--color-surface-alt)] rounded-2xl border border-[var(--color-line)] p-6 sm:p-8"
       : "bg-white rounded-2xl shadow-xl border border-[var(--color-line)] p-6 sm:p-8";
@@ -180,8 +219,8 @@ export function FormCard({
                 Thanks, {firstName || "we got it"}.
               </h3>
               <p className="text-[var(--color-ink-muted)] max-w-sm mx-auto">
-                We&apos;ve logged your info. We&apos;ll reach out as your
-                timeline gets closer — no pressure.
+                We&apos;ve logged your info. A senior consultant will reach
+                out — no pressure, no spam.
               </p>
               <p className="text-sm text-[var(--color-ink-muted)]">
                 In the meantime, you&apos;re welcome to email us at{" "}
@@ -204,7 +243,7 @@ export function FormCard({
   return (
     <div className={wrapperClass}>
       <div className="mb-5">
-        <h3 className="text-2xl sm:text-[1.7rem] font-bold text-[var(--color-accent)] leading-tight">
+        <h3 className="text-xl sm:text-2xl font-bold text-[var(--color-accent)] leading-tight">
           {heading}
         </h3>
         {subheading && (
@@ -214,8 +253,13 @@ export function FormCard({
         )}
       </div>
 
-      <form onSubmit={handleSubmit} noValidate className="space-y-3.5">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+      <form
+        ref={formRef}
+        onSubmit={handleFormSubmit}
+        noValidate={false}
+        className="space-y-3"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label htmlFor={`fn-${idSuffix}`} className="sr-only">
               First name
@@ -289,28 +333,32 @@ export function FormCard({
 
         <div>
           <label
-            htmlFor={`roi-${idSuffix}`}
+            htmlFor={`budget-${idSuffix}`}
             className="block text-xs font-semibold text-[var(--color-ink)] mb-1.5 uppercase tracking-wider"
           >
-            If AI freed up 40-60% of your team&apos;s time, what would that be worth?
+            What is your budget for an AI & Automation solution?
           </label>
           <div className="relative">
             <select
-              id={`roi-${idSuffix}`}
-              name="roiValue"
+              id={`budget-${idSuffix}`}
+              name="budget"
               required
-              value={roiValue}
-              onChange={(e) => setRoiValue(e.target.value)}
+              value={budget}
+              onChange={(e) => setBudget(e.target.value as BudgetValue)}
               className={`${inputClass} appearance-none pr-10 ${
-                roiValue === "" ? "text-[var(--color-ink-muted)]" : ""
+                budget === "" ? "text-[var(--color-ink-muted)]" : ""
               }`}
             >
               <option value="" disabled>
-                Select an estimate
+                Select a budget range
               </option>
-              {ROI_OPTIONS.map((opt) => (
-                <option key={opt} value={opt} className="text-[var(--color-ink)]">
-                  {opt}
+              {BUDGET_OPTIONS.map((opt) => (
+                <option
+                  key={opt.value}
+                  value={opt.value}
+                  className="text-[var(--color-ink)]"
+                >
+                  {opt.label}
                 </option>
               ))}
             </select>
@@ -318,6 +366,93 @@ export function FormCard({
               <ChevronDown />
             </div>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label
+              htmlFor={`yib-${idSuffix}`}
+              className="block text-xs font-semibold text-[var(--color-ink)] mb-1.5 uppercase tracking-wider"
+            >
+              Years in business
+            </label>
+            <div className="relative">
+              <select
+                id={`yib-${idSuffix}`}
+                name="yearsInBusiness"
+                required
+                value={yearsInBusiness}
+                onChange={(e) => setYearsInBusiness(e.target.value)}
+                className={`${inputClass} appearance-none pr-10 ${
+                  yearsInBusiness === "" ? "text-[var(--color-ink-muted)]" : ""
+                }`}
+              >
+                <option value="" disabled>
+                  Select
+                </option>
+                {YEARS_IN_BUSINESS_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt} className="text-[var(--color-ink)]">
+                    {opt}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                <ChevronDown />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor={`rev-${idSuffix}`}
+              className="block text-xs font-semibold text-[var(--color-ink)] mb-1.5 uppercase tracking-wider"
+            >
+              Annual revenue
+            </label>
+            <div className="relative">
+              <select
+                id={`rev-${idSuffix}`}
+                name="annualRevenue"
+                required
+                value={annualRevenue}
+                onChange={(e) => setAnnualRevenue(e.target.value)}
+                className={`${inputClass} appearance-none pr-10 ${
+                  annualRevenue === "" ? "text-[var(--color-ink-muted)]" : ""
+                }`}
+              >
+                <option value="" disabled>
+                  Select
+                </option>
+                {ANNUAL_REVENUE_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt} className="text-[var(--color-ink)]">
+                    {opt}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                <ChevronDown />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label
+            htmlFor={`dm-${idSuffix}`}
+            className="block text-xs font-semibold text-[var(--color-ink)] mb-1.5 uppercase tracking-wider"
+          >
+            Key decision maker(s) — name &amp; title
+          </label>
+          <input
+            id={`dm-${idSuffix}`}
+            name="decisionMakers"
+            type="text"
+            required
+            placeholder="e.g., Jane Smith, Managing Partner"
+            value={decisionMakers}
+            onChange={(e) => setDecisionMakers(e.target.value)}
+            className={inputClass}
+          />
         </div>
 
         <div>
@@ -357,17 +492,37 @@ export function FormCard({
           </div>
         </div>
 
+        {/* type="button" + validate-first + requestSubmit pattern per AGENTS.md
+            Hard Rule #5 — prevents Mega optimizer duplicate form_submit. */}
         <button
-          type="submit"
-          disabled={!canSubmit || submitting || submitted}
-          className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-60 disabled:cursor-not-allowed text-white px-6 py-3.5 rounded-lg font-semibold text-base transition shadow-sm mt-2"
+          type="button"
+          onClick={handleButtonClick}
+          disabled={submitting || submitted}
+          className="w-full bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-700)] hover:from-[var(--color-primary-hover)] hover:to-[var(--color-primary-700)] disabled:opacity-60 disabled:cursor-not-allowed text-white px-6 py-3.5 rounded-lg font-bold text-base transition shadow-lg shadow-[var(--color-primary)]/30 mt-2 group relative overflow-hidden"
         >
-          {submitting ? "Submitting…" : BRAND.primaryCtaLabel}
+          <span className="relative z-10 flex items-center justify-center gap-2">
+            {submitting ? "Submitting…" : BRAND.primaryCtaLabel}
+            {!submitting && (
+              <svg
+                className="w-4 h-4 transition-transform group-hover:translate-x-1"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            )}
+          </span>
         </button>
 
         <p className="text-[11px] text-[var(--color-ink-muted)] text-center leading-relaxed pt-1">
           By submitting, you agree to be contacted by ForwardIT about your
-          assessment. Free, no-obligation 30-minute call.
+          strategy call. Free, no-obligation 30-minute call.
         </p>
       </form>
     </div>

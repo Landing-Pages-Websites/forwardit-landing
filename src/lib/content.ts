@@ -1,7 +1,9 @@
 // ForwardIT LP — source of truth for all page content.
-// Atlas task: 5705b7e5-517e-46d2-8f21-c944e1c71778
+// Atlas task: 2cfce493-3d93-4dce-95f1-efc8f0698176 (Complete LP Revamp 2026-05-14)
+// Prior task: 5705b7e5-517e-46d2-8f21-c944e1c71778
 // Customer: The ForwardIT (3d3fed28-24fd-4b94-8b71-b183821511a8)
-// NEVER change fields/copy without re-reading the task spec first.
+// Director directive 2026-05-14: full redesign — dynamic motion, polished, "make them great"
+// Client feedback doc: docs.google.com/document/d/1oKTeXeDIIQpOfh7CKC2Hx_F2d8CDqM6TJloXq2FGKdo
 
 export type ServicePillar = {
   slug: string;
@@ -28,9 +30,9 @@ export const BRAND = {
   name: "ForwardIT",
   fullName: "ForwardIT Inc.",
   tagline: "Federal-grade AI & automation. Now for SMBs.",
-  heroHook: "If AI could free up 40-60% of your team's time — what would that be worth?",
+  // Client-approved positioning (Google Doc 2026-05-14):
   positioning:
-    "ForwardIT helps SMBs — law firms, accounting practices, medical offices, and growing businesses — turn operational drag into measurable ROI with the same AI and automation stack we've deployed for federal agencies for over 20 years.",
+    "ForwardIT builds AI and Automation solutions for SMBs — law firms, accounting firms, medical practices, and businesses with 5–50 employees. We bring the same federal-grade AI expertise to commercial clients, at a scale and price point that makes sense for your business.",
   shortPositioning:
     "We turn manual, repetitive work into automated workflows — so your team can focus on billable, revenue-generating work.",
   // Real phone exists (301 235 2050) but task spec has_phone_leads=false — NO phone CTAs.
@@ -42,15 +44,27 @@ export const BRAND = {
     zip: "20770",
   },
   calendlyUrl: "https://calendly.com/theforwardit-info/30min",
-  primaryCtaLabel: "Get My Free ROI Assessment",
-  primaryCtaShort: "Get My ROI Assessment",
+  primaryCtaLabel: "Book My Free Strategy Call",
+  primaryCtaShort: "Book My Strategy Call",
   ctaSubLabel: "Free 30-min · No obligation",
 } as const;
 
-export const STATS: { value: string; label: string }[] = [
-  { value: "40-60%", label: "Team hours reclaimed from manual work" },
-  { value: "20+ yrs", label: "Building AI & automation for federal agencies" },
-  { value: "100%", label: "Woman-owned, US-based consulting team" },
+// Rotating words used in the animated headline.
+// Order matters — first word shown is "admin work" (most universal).
+export const HERO_ROTATING_WORDS = [
+  "admin work",
+  "data entry",
+  "follow-ups",
+  "report building",
+  "inbox triage",
+  "manual reconciliation",
+] as const;
+
+export const STATS: { value: string; label: string; suffix?: string }[] = [
+  { value: "40-60", label: "% of team time reclaimed from manual work", suffix: "%" },
+  { value: "20+", label: "Years building AI & automation for federal agencies" },
+  { value: "100", label: "% Woman-owned, US-based consulting team", suffix: "%" },
+  { value: "90", label: "Days to typical ROI break-even", suffix: "d" },
 ];
 
 export const PAIN_POINTS: { title: string; body: string }[] = [
@@ -65,6 +79,26 @@ export const PAIN_POINTS: { title: string; body: string }[] = [
   {
     title: "Siloed tools that don't talk",
     body: "Your practice management, accounting, CRM, and docs all live in separate systems. Every report is a copy-paste project.",
+  },
+];
+
+// "Revenue Left on the Table" — added per client doc (typo in live page version).
+// Numbers framed as illustrative ranges, not fabricated single-client stats.
+export const REVENUE_LEAKS: { value: string; title: string; body: string }[] = [
+  {
+    value: "$48k+",
+    title: "Per under-billed associate, per year",
+    body: "A senior associate billing 32 hours/week instead of 38 because of admin drag loses ~6 billable hours weekly. At $150/hr that's $46,800 a year — per head.",
+  },
+  {
+    value: "12–18",
+    title: "Hours/week per ops team member",
+    body: "Average SMB operations staffer spends 12–18 hours per week on copy-paste between CRM, billing, and spreadsheets. Half of it disappears the moment automation lands.",
+  },
+  {
+    value: "23%",
+    title: "Faster proposal turnaround",
+    body: "Practices that automate intake + proposal generation close in ~23% less time on average. Faster yes, faster no, fewer ghosted leads in your pipeline.",
   },
 ];
 
@@ -150,7 +184,7 @@ export const TESTIMONIALS: Testimonial[] = [
 export const PROCESS_STEPS: { step: number; title: string; body: string }[] = [
   {
     step: 1,
-    title: "30-min ROI assessment",
+    title: "30-min strategy call",
     body: "Book a free call. We ask about your team, tools, and biggest operational bottlenecks. You walk away with a rough ROI estimate — whether or not we work together.",
   },
   {
@@ -169,7 +203,7 @@ export const FAQS: FAQ[] = [
   {
     question: "How fast will we see results?",
     answer:
-      "Most SMBs see their first automated workflow in production within 2-4 weeks of kickoff. The ROI assessment takes 30 minutes and is free — you'll have a rough hours-saved estimate before you sign anything.",
+      "Most SMBs see their first automated workflow in production within 2-4 weeks of kickoff. The strategy call takes 30 minutes and is free — you'll have a rough hours-saved estimate before you sign anything.",
   },
   {
     question: "Do you replace our existing tools?",
@@ -184,7 +218,7 @@ export const FAQS: FAQ[] = [
   {
     question: "What does this cost?",
     answer:
-      "The ROI assessment is free. Audits and implementations are quoted as fixed-scope, fixed-fee engagements after the assessment — so you know exactly what you're investing before you commit. Most SMB engagements pay for themselves within 90 days.",
+      "The strategy call is free. Audits and implementations are quoted as fixed-scope, fixed-fee engagements after the call — so you know exactly what you're investing before you commit. Most SMB engagements pay for themselves within 90 days.",
   },
   {
     question: "Do you work with specific industries?",
@@ -194,17 +228,40 @@ export const FAQS: FAQ[] = [
   {
     question: "What if I'm not ready to move on a project for 6+ months?",
     answer:
-      "Still book the assessment. It's free, it takes 30 minutes, and we'll give you the roadmap so you can plan around it. We'll follow up as your timeline gets closer — no pressure.",
+      "Still book the call. It's free, it takes 30 minutes, and we'll give you the roadmap so you can plan around it. We'll follow up as your timeline gets closer — no pressure.",
   },
 ];
 
-// Form options — EXACT per task spec. Do NOT reword.
-export const ROI_OPTIONS = [
-  "Less than $1,500",
-  "$1,500–$5,000",
-  "$5,000–$20,000",
-  "$20,000+",
-  "I'd need to see the numbers first",
+// ============================================================================
+// FORM OPTIONS — per client Google Doc 2026-05-14
+// REMOVED: ROI dollar-value question ("If AI freed up 40-60%…")
+// ADDED:   budget (qualifier), years in business, annual revenue, decision makers
+// ============================================================================
+
+export const BUDGET_OPTIONS = [
+  { value: "0-2500", label: "$0 – $2,500", qualifies: false },
+  { value: "2500-5000", label: "$2,500 – $5,000", qualifies: true },
+  { value: "5000-10000", label: "$5,000 – $10,000", qualifies: true },
+  { value: "10000-15000", label: "$10,000 – $15,000", qualifies: true },
+  { value: "15000-plus", label: "$15,000+", qualifies: true },
+] as const;
+
+export type BudgetValue = (typeof BUDGET_OPTIONS)[number]["value"];
+
+export const YEARS_IN_BUSINESS_OPTIONS = [
+  "Less than 1 year",
+  "1–3 years",
+  "3–5 years",
+  "5–10 years",
+  "10+ years",
+] as const;
+
+export const ANNUAL_REVENUE_OPTIONS = [
+  "Under $250k",
+  "$250k – $1M",
+  "$1M – $5M",
+  "$5M – $25M",
+  "$25M+",
 ] as const;
 
 export const TIMELINE_OPTIONS = [
@@ -216,6 +273,31 @@ export const TIMELINE_OPTIONS = [
 
 export type TimelineValue = (typeof TIMELINE_OPTIONS)[number]["value"];
 
-export function qualifies(timeline: TimelineValue): boolean {
-  return TIMELINE_OPTIONS.find((o) => o.value === timeline)?.qualifies ?? false;
+/**
+ * Qualifier: must pass BOTH budget and timeline.
+ * Disqualified leads STILL submit to the lead API (AGENTS.md Hard Rule #1).
+ */
+export function qualifies(
+  budget: BudgetValue,
+  timeline: TimelineValue,
+): boolean {
+  const budgetOk =
+    BUDGET_OPTIONS.find((o) => o.value === budget)?.qualifies ?? false;
+  const timelineOk =
+    TIMELINE_OPTIONS.find((o) => o.value === timeline)?.qualifies ?? false;
+  return budgetOk && timelineOk;
+}
+
+export function disqualificationReason(
+  budget: BudgetValue,
+  timeline: TimelineValue,
+): string | null {
+  const budgetOk =
+    BUDGET_OPTIONS.find((o) => o.value === budget)?.qualifies ?? false;
+  const timelineOk =
+    TIMELINE_OPTIONS.find((o) => o.value === timeline)?.qualifies ?? false;
+  if (!budgetOk && !timelineOk) return "budget_and_timeline";
+  if (!budgetOk) return "budget";
+  if (!timelineOk) return "timeline";
+  return null;
 }

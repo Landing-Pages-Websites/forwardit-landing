@@ -3,14 +3,18 @@ import { Reveal } from "@/components/Reveal";
 import { PrimaryCTA } from "@/components/PrimaryCTA";
 import { AUTHORITY_POINTS } from "@/lib/content";
 
+/**
+ * "Why ForwardIT" — heading updated per client Google Doc 2026-05-14
+ * (was "Why The ForwardIT", drop the article).
+ */
 export function AuthoritySection() {
   return (
     <section
-      id="expertise"
-      className="relative overflow-hidden bg-[var(--color-accent)] text-white py-20 lg:py-28"
+      id="why-forwardit"
+      className="relative overflow-hidden bg-gradient-to-br from-[var(--color-accent)] via-[var(--color-primary-800)] to-[var(--color-accent)] text-white py-20 lg:py-28"
     >
-      {/* Background image */}
-      <div className="absolute inset-0 -z-0 opacity-[0.18]">
+      {/* Background image — subtle */}
+      <div className="absolute inset-0 -z-0 opacity-[0.14]">
         <Image
           src="/images/feature-1.png"
           alt=""
@@ -21,18 +25,20 @@ export function AuthoritySection() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[var(--color-accent)]/95 via-[var(--color-accent)]/75 to-[var(--color-accent)]" />
       </div>
+      {/* Animated grid texture */}
+      <div className="absolute inset-0 bg-grid-animated opacity-50 -z-[1]" aria-hidden />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 z-10">
         <div className="grid lg:grid-cols-[1fr_1.1fr] gap-12 lg:gap-16 items-center">
           <Reveal>
-            <p className="eyebrow eyebrow-on-dark">Who we are</p>
+            <p className="eyebrow eyebrow-on-dark">Why ForwardIT</p>
             <h2 className="mt-3 text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">
               Federal-grade expertise.{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-blue-400">
-                Now for SMBs.
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 via-cyan-300 to-blue-400">
+                Built for SMBs.
               </span>
             </h2>
-            <p className="mt-5 text-lg text-white/75 leading-relaxed max-w-prose">
+            <p className="mt-5 text-lg text-white/80 leading-relaxed max-w-prose">
               For 20+ years, our leadership has built AI, automation, and data
               platforms for federal agencies where failure isn&apos;t an
               option — NIH, SAMHSA, the League of Women Voters, and others.
@@ -45,15 +51,15 @@ export function AuthoritySection() {
             {AUTHORITY_POINTS.map((point, i) => (
               <div
                 key={point.title}
-                className="relative pl-14 pr-5 py-5 rounded-xl bg-white/6 backdrop-blur border border-white/10"
+                className="relative pl-16 pr-5 py-5 rounded-xl bg-white/8 backdrop-blur border border-white/12 hover:bg-white/12 transition-colors"
               >
-                <div className="absolute left-4 top-5 w-8 h-8 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center font-bold text-sm">
+                <div className="absolute left-4 top-5 w-9 h-9 rounded-full bg-gradient-to-br from-[var(--color-cyan)] to-[var(--color-primary)] text-white flex items-center justify-center font-bold text-sm shadow-lg shadow-[var(--color-cyan)]/30">
                   {i + 1}
                 </div>
                 <h3 className="text-lg font-semibold text-white">
                   {point.title}
                 </h3>
-                <p className="mt-1.5 text-sm text-white/70 leading-relaxed">
+                <p className="mt-1.5 text-sm text-white/75 leading-relaxed">
                   {point.body}
                 </p>
               </div>

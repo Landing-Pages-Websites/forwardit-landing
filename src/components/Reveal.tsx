@@ -23,7 +23,7 @@ export function Reveal({
     if (!el) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced) {
-      setVisible(true);
+      queueMicrotask(() => setVisible(true));
       return;
     }
     const observer = new IntersectionObserver(
