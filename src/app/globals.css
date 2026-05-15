@@ -184,6 +184,10 @@ html {
   overflow: hidden;
   vertical-align: bottom;
   min-width: 8ch;
+  /* Clip to a single row so only one word is visible at a time —
+     the track translates 1.1em per step to cycle through. */
+  height: 1.1em;
+  line-height: 1.1;
 }
 
 .rotating-words-track {
