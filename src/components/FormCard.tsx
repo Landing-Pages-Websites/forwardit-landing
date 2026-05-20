@@ -7,8 +7,6 @@ import {
   YEARS_IN_BUSINESS_OPTIONS,
   ANNUAL_REVENUE_OPTIONS,
   TIMELINE_OPTIONS,
-  qualifies,
-  disqualificationReason,
   type BudgetValue,
   type TimelineValue,
   BRAND,
@@ -30,16 +28,23 @@ type Props = {
  *   2. lastName               required
  *   3. email                  required
  *   4. phone                  required (10-digit US)
- *   5. budget                 required (qualifier: < $2,500 = disqualified)
+ *   5. budget                 required
  *   6. yearsInBusiness        required
  *   7. annualRevenue          required
  *   8. decisionMakers         required (free text — name + title)
- *   9. timeline               required (qualifier: 6+ months = disqualified)
+ *   9. timeline               required
  *
- * Qualifier logic:
- *   - qualified  = budget ≥ $2,500 AND timeline < 6 months → redirect to Calendly
- *   - otherwise  = success + "we'll reach out" message
- *   - BOTH paths submit to the lead API (AGENTS.md Hard Rule #1)
+ * Submission policy (Anthony directive 2026-05-20, task fb289155 / 048ae6ac):
+ *   - EVERY filled form submits to the lead API. Period.
+ *   - The LP no longer computes a qualified/disqualified verdict. The
+ *     `lead_qualification_rules` engine in the platform owns that decision
+ *     server-side based on the same field values.
+ *   - All leads are then pushed downstream (HubSpot etc) by the backend
+ *     routing pipeline regardless of their server-side qualification verdict.
+ *
+ * UX:
+ *   - Every successful submit shows the same "you're booked" success state
+ *     and redirects to Calendly after 2s. No client-side branching.
  *
  * Anti-disruption pattern (button type="button" + validate-first + requestSubmit)
  * prevents Mega optimizer from firing duplicate form_submit on native submit.
@@ -89,7 +94,6 @@ export function FormCard({
 
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [qualified, setQualified] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const phoneDigits = phone.replace(/\D/g, "");
@@ -105,15 +109,16 @@ export function FormCard({
     decisionMakers.trim().length >= 2 &&
     timeline.length > 0;
 
-  // Auto-redirect to Calendly when qualified
+  // Every successful submit auto-redirects to Calendly. No LP-side
+  // qualifier branch — the backend decides qualified/dq routing.
   useEffect(() => {
-    if (submitted && qualified) {
+    if (submitted) {
       const t = setTimeout(() => {
         window.location.href = BRAND.calendlyUrl;
       }, 2000);
       return () => clearTimeout(t);
     }
-  }, [submitted, qualified]);
+  }, [submitted]);
 
   async function performSubmit() {
     if (submitting || submitted) return;
@@ -122,8 +127,6 @@ export function FormCard({
     setSubmitting(true);
     const b = budget as BudgetValue;
     const t = timeline as TimelineValue;
-    const isQualified = qualifies(b, t);
-    const dqReason = disqualificationReason(b, t);
     try {
       await submit({
         firstName: firstName.trim(),
@@ -135,8 +138,6 @@ export function FormCard({
         annualRevenue,
         decisionMakers: decisionMakers.trim(),
         timeline: t,
-        qualified: isQualified ? "yes" : "no",
-        disqualification_reason: dqReason ?? "",
       });
       // Manual form_submit event fire — required because our submit handler
       // uses requestSubmit() pattern that bypasses the optimizer's native
@@ -156,8 +157,6 @@ export function FormCard({
             annualRevenue,
             decisionMakers: decisionMakers.trim(),
             timeline: t,
-            qualified: isQualified ? "yes" : "no",
-            disqualification_reason: dqReason ?? "",
           });
         } catch (trackErr) {
           // Tracking is best-effort — never block the user on it.
@@ -169,7 +168,6 @@ export function FormCard({
       // Per builder Hard Rule #12: still transition to success; don't strand user.
       setError("Something went wrong on our end — we also got your info.");
     } finally {
-      setQualified(isQualified);
       setSubmitted(true);
       setSubmitting(false);
     }
@@ -221,42 +219,21 @@ export function FormCard({
             </svg>
           </div>
 
-          {qualified ? (
-            <>
-              <h3 className="text-2xl font-bold text-[var(--color-accent)]">
-                You&apos;re all set, {firstName || "there"}.
-              </h3>
-              <p className="text-[var(--color-ink-muted)] max-w-sm mx-auto">
-                Redirecting you to our scheduler to pick a 30-min slot…
-              </p>
-              <a
-                href={BRAND.calendlyUrl}
-                className="inline-flex items-center justify-center bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white px-6 py-3 rounded-lg font-semibold text-base transition shadow-sm"
-              >
-                Open my booking page
-              </a>
-              <p className="text-xs text-[var(--color-ink-muted)]">
-                Didn&apos;t redirect? Click the button above.
-              </p>
-            </>
-          ) : (
-            <>
-              <h3 className="text-2xl font-bold text-[var(--color-accent)]">
-                Thanks, {firstName || "we got it"}.
-              </h3>
-              <p className="text-[var(--color-ink-muted)] max-w-sm mx-auto">
-                We&apos;ve logged your info. A senior consultant will reach
-                out — no pressure, no spam.
-              </p>
-              <p className="text-sm text-[var(--color-ink-muted)]">
-                In the meantime, you&apos;re welcome to email us at{" "}
-                <span className="font-semibold text-[var(--color-accent)]">
-                  {BRAND.email}
-                </span>
-                .
-              </p>
-            </>
-          )}
+          <h3 className="text-2xl font-bold text-[var(--color-accent)]">
+            You&apos;re all set, {firstName || "there"}.
+          </h3>
+          <p className="text-[var(--color-ink-muted)] max-w-sm mx-auto">
+            Redirecting you to our scheduler to pick a 30-min slot…
+          </p>
+          <a
+            href={BRAND.calendlyUrl}
+            className="inline-flex items-center justify-center bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white px-6 py-3 rounded-lg font-semibold text-base transition shadow-sm"
+          >
+            Open my booking page
+          </a>
+          <p className="text-xs text-[var(--color-ink-muted)]">
+            Didn&apos;t redirect? Click the button above.
+          </p>
 
           {error && (
             <p className="text-xs text-[var(--color-ink-muted)]">(Note: {error})</p>

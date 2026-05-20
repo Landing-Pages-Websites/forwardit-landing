@@ -33,9 +33,9 @@ export function ContactSection() {
             </span>
           </h2>
           <p className="text-lg text-white/75 leading-relaxed">
-            {BRAND.shortPositioning} Book the free assessment — qualified
-            teams skip straight to scheduling, everyone else gets the
-            roadmap to plan around.
+            {BRAND.shortPositioning} Book the free assessment — we&apos;ll
+            walk you through where AI &amp; automation can save your team
+            the most hours.
           </p>
 
           <ul className="space-y-3 pt-2">

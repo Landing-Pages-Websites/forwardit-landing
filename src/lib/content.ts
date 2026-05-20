@@ -239,11 +239,11 @@ export const FAQS: FAQ[] = [
 // ============================================================================
 
 export const BUDGET_OPTIONS = [
-  { value: "0-2500", label: "$0 – $2,500", qualifies: false },
-  { value: "2500-5000", label: "$2,500 – $5,000", qualifies: true },
-  { value: "5000-10000", label: "$5,000 – $10,000", qualifies: true },
-  { value: "10000-15000", label: "$10,000 – $15,000", qualifies: true },
-  { value: "15000-plus", label: "$15,000+", qualifies: true },
+  { value: "0-2500", label: "$0 – $2,500" },
+  { value: "2500-5000", label: "$2,500 – $5,000" },
+  { value: "5000-10000", label: "$5,000 – $10,000" },
+  { value: "10000-15000", label: "$10,000 – $15,000" },
+  { value: "15000-plus", label: "$15,000+" },
 ] as const;
 
 export type BudgetValue = (typeof BUDGET_OPTIONS)[number]["value"];
@@ -265,39 +265,15 @@ export const ANNUAL_REVENUE_OPTIONS = [
 ] as const;
 
 export const TIMELINE_OPTIONS = [
-  { value: "asap", label: "ASAP", qualifies: true },
-  { value: "1-3-months", label: "1–3 months", qualifies: true },
-  { value: "3-6-months", label: "3–6 months", qualifies: true },
-  { value: "6-plus-months", label: "6+ months", qualifies: false },
+  { value: "asap", label: "ASAP" },
+  { value: "1-3-months", label: "1–3 months" },
+  { value: "3-6-months", label: "3–6 months" },
+  { value: "6-plus-months", label: "6+ months" },
 ] as const;
 
 export type TimelineValue = (typeof TIMELINE_OPTIONS)[number]["value"];
 
-/**
- * Qualifier: must pass BOTH budget and timeline.
- * Disqualified leads STILL submit to the lead API (AGENTS.md Hard Rule #1).
- */
-export function qualifies(
-  budget: BudgetValue,
-  timeline: TimelineValue,
-): boolean {
-  const budgetOk =
-    BUDGET_OPTIONS.find((o) => o.value === budget)?.qualifies ?? false;
-  const timelineOk =
-    TIMELINE_OPTIONS.find((o) => o.value === timeline)?.qualifies ?? false;
-  return budgetOk && timelineOk;
-}
-
-export function disqualificationReason(
-  budget: BudgetValue,
-  timeline: TimelineValue,
-): string | null {
-  const budgetOk =
-    BUDGET_OPTIONS.find((o) => o.value === budget)?.qualifies ?? false;
-  const timelineOk =
-    TIMELINE_OPTIONS.find((o) => o.value === timeline)?.qualifies ?? false;
-  if (!budgetOk && !timelineOk) return "budget_and_timeline";
-  if (!budgetOk) return "budget";
-  if (!timelineOk) return "timeline";
-  return null;
-}
+// LP-side qualifier logic removed 2026-05-20 per Anthony directive
+// (tasks fb289155, 048ae6ac): every filled form submits to the API and
+// every lead is routed downstream. Qualification is the backend's job
+// via `lead_qualification_rules`.
