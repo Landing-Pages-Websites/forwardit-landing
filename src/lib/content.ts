@@ -238,12 +238,16 @@ export const FAQS: FAQ[] = [
 // ADDED:   budget (qualifier), years in business, annual revenue, decision makers
 // ============================================================================
 
+// Values are submitted as-is to HubSpot / Mega Events. Format with dollar
+// signs + thousands commas per client request 2026-06-01 (task
+// 6e8e6ec5-fb4c-4054-90b2-ef9b9874cfc7) so CRM and notification emails
+// show readable strings, not raw codes like "5000-10000".
 export const BUDGET_OPTIONS = [
-  { value: "0-2500", label: "$0 – $2,500" },
-  { value: "2500-5000", label: "$2,500 – $5,000" },
-  { value: "5000-10000", label: "$5,000 – $10,000" },
-  { value: "10000-15000", label: "$10,000 – $15,000" },
-  { value: "15000-plus", label: "$15,000+" },
+  { value: "$0-$2,500", label: "$0 – $2,500" },
+  { value: "$2,500-$5,000", label: "$2,500 – $5,000" },
+  { value: "$5,000-$10,000", label: "$5,000 – $10,000" },
+  { value: "$10,000-$15,000", label: "$10,000 – $15,000" },
+  { value: "$15,000+", label: "$15,000+" },
 ] as const;
 
 export type BudgetValue = (typeof BUDGET_OPTIONS)[number]["value"];
