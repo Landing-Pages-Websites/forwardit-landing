@@ -46,9 +46,15 @@ type Props = {
  *   - Every successful submit shows the same "you're booked" success state
  *     and redirects to Calendly after 2s. No client-side branching.
  *
- * Anti-disruption pattern (button type="button" + validate-first + requestSubmit)
- * prevents Mega optimizer from firing duplicate form_submit on native submit.
+ * Anti-disruption pattern (button type="button" + validate-first + direct
+ * performSubmit, no native submit event) prevents the Mega optimizer from
+ * beaconing form_submit before the fetch resolves. Success, tracking, and the
+ * Calendly redirect all gate on a server-confirmed {ok:true} response, so a
+ * failed submit fires no conversion and shows a retryable error instead.
  */
+
+const SUBMIT_ERROR_MESSAGE =
+  "Something went wrong sending your request. Please try again, or email us at info@theforwardit.com.";
 
 function formatPhone(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 10);
@@ -81,6 +87,7 @@ export function FormCard({
 }: Props) {
   const { submit } = useMegaLeadForm();
   const formRef = useRef<HTMLFormElement>(null);
+  const inFlightRef = useRef(false);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -94,7 +101,7 @@ export function FormCard({
 
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const phoneDigits = phone.replace(/\D/g, "");
   const phoneValid = phoneDigits.length === 10;
@@ -121,14 +128,15 @@ export function FormCard({
   }, [submitted]);
 
   async function performSubmit() {
-    if (submitting || submitted) return;
+    if (inFlightRef.current) return;
     if (!canSubmit) return;
-    setError(null);
+    inFlightRef.current = true;
+    setSubmitError(null);
     setSubmitting(true);
     const b = budget as BudgetValue;
     const t = timeline as TimelineValue;
     try {
-      await submit({
+      const res = await submit({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: email.trim(),
@@ -139,11 +147,16 @@ export function FormCard({
         decisionMakers: decisionMakers.trim(),
         timeline: t,
       });
+      // A 2xx whose body is not {ok:true} is still a dropped lead.
+      if (res?.ok !== true) {
+        throw new Error("Submission not confirmed by server.");
+      }
       // Manual form_submit event fire — required because our submit handler
-      // uses requestSubmit() pattern that bypasses the optimizer's native
-      // submit auto-detect (AGENTS.md Hard Rule #5). Fields are passed as
+      // fires no native submit event, so the optimizer's native submit
+      // auto-detect never runs (AGENTS.md Hard Rule #5). Fields are passed as
       // separate keys so they land as separate columns in Mega Events /
-      // Keystone (Peter mandate 2026-05-14).
+      // Keystone (Peter mandate 2026-05-14). Fires ONLY after the server
+      // confirms the lead, so we never bill a conversion for a dropped lead.
       if (typeof window !== "undefined" && window.MegaTag?.trackEvent) {
         try {
           window.MegaTag.trackEvent("form_submit", {
@@ -163,31 +176,43 @@ export function FormCard({
           console.warn("MegaTag.trackEvent failed:", trackErr);
         }
       }
+      setSubmitted(true);
     } catch (err) {
       console.error("Form submission failed:", err);
-      // Per builder Hard Rule #12: still transition to success; don't strand user.
-      setError("Something went wrong on our end — we also got your info.");
+      // The visitor is fine; the LEAD would be dropped. Surface a retryable error and
+      // fire NO tracking, so we never bill a conversion for a lead that does not exist.
+      setSubmitError(SUBMIT_ERROR_MESSAGE);
     } finally {
-      setSubmitted(true);
+      inFlightRef.current = false;
       setSubmitting(false);
     }
   }
 
+  // The form fires no native submit: onSubmit only prevents default. All
+  // submission goes through handleButtonClick → performSubmit so the Mega
+  // optimizer never beacons form_submit before the fetch resolves.
   function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault();
-    performSubmit();
   }
 
-  // Validate-first → requestSubmit pattern: button is type="button".
-  // This prevents the Mega optimizer from firing form_submit on a
-  // native submit event when validation would have blocked it.
+  // Validate-first, then submit directly. We deliberately avoid dispatching a
+  // native submit event, which the Mega optimizer auto-detects at click time.
   function handleButtonClick() {
     if (!canSubmit) {
       // Show native validation messages
       formRef.current?.reportValidity();
       return;
     }
-    formRef.current?.requestSubmit();
+    performSubmit();
+  }
+
+  // Restore Enter-to-submit that the native submit path used to provide. Ignore
+  // Enter in textareas so multi-line inputs still work (there are none today).
+  function handleFormKeyDown(e: React.KeyboardEvent<HTMLFormElement>) {
+    if (e.key !== "Enter") return;
+    if ((e.target as HTMLElement).tagName === "TEXTAREA") return;
+    e.preventDefault();
+    handleButtonClick();
   }
 
   const wrapperClass =
@@ -234,10 +259,6 @@ export function FormCard({
           <p className="text-xs text-[var(--color-ink-muted)]">
             Didn&apos;t redirect? Click the button above.
           </p>
-
-          {error && (
-            <p className="text-xs text-[var(--color-ink-muted)]">(Note: {error})</p>
-          )}
         </div>
       </div>
     );
@@ -259,6 +280,7 @@ export function FormCard({
       <form
         ref={formRef}
         onSubmit={handleFormSubmit}
+        onKeyDown={handleFormKeyDown}
         noValidate={false}
         className="space-y-3"
       >
@@ -495,8 +517,19 @@ export function FormCard({
           </div>
         </div>
 
-        {/* type="button" + validate-first + requestSubmit pattern per AGENTS.md
-            Hard Rule #5 — prevents Mega optimizer duplicate form_submit. */}
+        {submitError && (
+          <p
+            role="alert"
+            aria-live="polite"
+            className="rounded-lg border border-red-300 bg-[#fef3f2] px-3.5 py-2.5 text-sm font-medium !text-[#b91c1c]"
+          >
+            {submitError}
+          </p>
+        )}
+
+        {/* type="button" + validate-first + direct performSubmit per AGENTS.md
+            Hard Rule #5: no native submit event, so the Mega optimizer never
+            beacons form_submit before the fetch resolves. */}
         <button
           type="button"
           onClick={handleButtonClick}

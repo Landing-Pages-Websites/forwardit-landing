@@ -247,7 +247,11 @@ export function useMegaLeadForm(
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-      return (await response.json()) as SubmissionResponse;
+      const body = (await response.json()) as SubmissionResponse;
+      if (body?.ok !== true) {
+        throw new Error("Submission not confirmed by server.");
+      }
+      return body;
     },
     [options.customerId, options.siteId, options.sourceProvider],
   );
